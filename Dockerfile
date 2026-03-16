@@ -8,10 +8,12 @@ RUN apt-get update && apt-get install -y \
     libxml2-dev \
     zip \
     unzip \
-    curl
+    curl \
+    sqlite3 \
+    libsqlite3-dev
 
-# PHP拡張のインストール
-RUN docker-php-ext-install pdo_mysql mbstring exif pcntl bcmath gd
+# PHP拡張のインストール（sqlite用を追加）
+RUN docker-php-ext-install pdo_mysql mbstring exif pcntl bcmath gd pdo_sqlite
 
 # Composerのインストール
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
@@ -20,13 +22,9 @@ COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 WORKDIR /var/www
 COPY . .
 
-# --- ここから「上書き」の重要設定 ---
-# 1. もともと入っているNginxのデフォルト設定を削除
-RUN rm /etc/nginx/sites-enabled/default
-
-# 2. 自分の作った nginx.conf を「正解」として配置（上書き）
+# Nginxの設定上書き
+RUN rm -f /etc/nginx/sites-enabled/default
 COPY nginx.conf /etc/nginx/sites-enabled/default
-# --- ここまで ---
 
 # ライブラリのインストール
 RUN composer install --no-dev --optimize-autoloader
@@ -37,5 +35,11 @@ RUN chown -R www-data:www-data /var/www/storage /var/www/bootstrap/cache
 # 公開ポートの設定
 EXPOSE 80
 
-# サーバー起動設定
-CMD service nginx start && php-fpm -D && tail -f /dev/null
+# --- ここを修正しました ---
+# 起動時にデータベース作成とサーバー起動をセットで行う
+CMD service nginx start && \
+    mkdir -p database && \
+    touch database/database.sqlite && \
+    chmod -R 777 database && \
+    php artisan migrate --force && \
+    php-fpm
