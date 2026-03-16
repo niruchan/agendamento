@@ -30,5 +30,7 @@ RUN npm run build
 # 権限の設定
 RUN chown -R www-data:www-data /var/www/storage /var/www/bootstrap/cache
 
+EXPOSE 80
+
 # サーバー起動！
 CMD php artisan migrate --force && php-fpm
