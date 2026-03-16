@@ -1,45 +1,34 @@
 FROM php:8.2-fpm
 
-# 必要なパッケージのインストール
+# 必要なツール（Node.js含む）をインストール
 RUN apt-get update && apt-get install -y \
-    nginx \
     libpng-dev \
-    libonig-dev \
-    libxml2-dev \
+    libjpeg-dev \
+    libfreetype6-dev \
     zip \
     unzip \
+    git \
     curl \
-    sqlite3 \
-    libsqlite3-dev
+    && curl -sL https://deb.nodesource.com/setup_18.x | bash - \
+    && apt-get install -y nodejs
 
-# PHP拡張のインストール（sqlite用を追加）
-RUN docker-php-ext-install pdo_mysql mbstring exif pcntl bcmath gd pdo_sqlite
+# PHP拡張機能を入れる
+RUN docker-php-ext-install pdo_mysql gd
 
-# Composerのインストール
-COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
-
-# 作業ディレクトリの設定
+# 作業ディレクトリ設定
 WORKDIR /var/www
+
+# ファイルをコピー
 COPY . .
 
-# Nginxの設定上書き
-RUN rm -f /etc/nginx/sites-enabled/default
-COPY nginx.conf /etc/nginx/sites-enabled/default
-
-# ライブラリのインストール
-RUN composer install --no-dev --optimize-autoloader
+# Composerとnpmで中身を組み立てる
+COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
+RUN composer install --no-dev
+RUN npm install
+RUN npm run build
 
 # 権限の設定
 RUN chown -R www-data:www-data /var/www/storage /var/www/bootstrap/cache
 
-# 公開ポートの設定
-EXPOSE 80
-
-# --- ここを修正しました ---
-# 起動時にデータベース作成とサーバー起動をセットで行う
-CMD service nginx start && \
-    mkdir -p database && \
-    touch database/database.sqlite && \
-    chmod -R 777 database && \
-    php artisan migrate --force && \
-    php-fpm
+# サーバー起動！
+CMD php artisan migrate --force && php-fpm
