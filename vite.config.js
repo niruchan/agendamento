@@ -1,3 +1,6 @@
+import { defineConfig } from 'vite';
+import laravel from 'laravel-vite-plugin';
+
 export default defineConfig({
     plugins: [
         laravel({
@@ -5,7 +8,7 @@ export default defineConfig({
             refresh: true,
         }),
     ],
-    // 🌟 ここを追加
+    // Renderの本番環境（HTTPS/WSS）でJavaScriptを正しく読み込ませる設定
     server: {
         hmr: {
             host: 'agendamento-eyp4.onrender.com',

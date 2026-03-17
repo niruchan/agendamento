@@ -1,6 +1,6 @@
 FROM php:8.2-fpm
 
-# 必要なツール（Node.js含む）をインストール
+# 必要なツール（Node.js 20系を指定）をインストール
 RUN apt-get update && apt-get install -y \
     libpng-dev \
     libjpeg-dev \
@@ -9,35 +9,31 @@ RUN apt-get update && apt-get install -y \
     unzip \
     git \
     curl \
-    && curl -sL https://deb.nodesource.com/setup_18.x | bash - \
+    && curl -sL https://deb.nodesource.com/setup_20.x | bash - \
     && apt-get install -y nodejs
 
-# PHP拡張機能を入れる
-# mysql だけでなく pgsql (PostgreSQL) も追加
+# PHP拡張機能（PostgreSQL対応）
 RUN apt-get update && apt-get install -y libpq-dev \
     && docker-php-ext-install pdo_mysql pdo_pgsql gd
 
-# 作業ディレクトリ設定
 WORKDIR /var/www
 
 # ファイルをコピー
 COPY . .
 
-# Composerとnpmで中身を組み立てる
+# Composerのインストール
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 RUN composer install --no-dev
+
+# 依存関係のインストールとViteのビルド
 RUN npm install
 RUN npm run build
 
 # 権限の設定
-# ...中略...
 RUN chown -R www-data:www-data /var/www/storage /var/www/bootstrap/cache
 
-# 🌟 ポート80を開放
 EXPOSE 80
 
-# 🌟 サーバー起動コマンドをこれに書き換え
-# CMD をこれにすると、DB接続を確認してから起動するので安定します
-# Dockerfileの最後をこれに書き換え
- # php artisan db:seed --force を削ります
+# サーバー起動コマンド
+# 1. キャッシュクリア 2. マイグレーション強制実行 3. サーバー起動
 CMD php artisan config:clear && php artisan migrate --force && php -S 0.0.0.0:80 -t public
