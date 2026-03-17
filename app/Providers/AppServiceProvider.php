@@ -19,10 +19,11 @@ class AppServiceProvider extends ServiceProvider
      * Bootstrap any application services.
      */
     public function boot(): void
-    {
-        // 本番環境（Renderなど）では強制的にHTTPSにする
-        if (config('app.env') === 'production') {
-            URL::forceScheme('https');
-        }
+{
+    if (app()->environment('production')) {
+        \URL::forceRootUrl(config('app.url'));
+        \URL::forceScheme('https');
+    }
+
     }
 }
