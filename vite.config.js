@@ -4,11 +4,14 @@ import laravel from 'laravel-vite-plugin';
 export default defineConfig({
     plugins: [
         laravel({
-            input: ['resources/css/app.css', 'resources/js/app.js'],
+            input: ['resources/css/app.css', 'resources/js/app.ts'],
             refresh: true,
         }),
     ],
-    // Renderの本番環境（HTTPS/WSS）でJavaScriptを正しく読み込ませる設定
+    // 🌟 これを追加：ビルドのターゲットを広げ、エラーを無視しやすくします
+    build: {
+        target: 'esnext'
+    },
     server: {
         hmr: {
             host: 'agendamento-eyp4.onrender.com',
