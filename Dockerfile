@@ -13,7 +13,9 @@ RUN apt-get update && apt-get install -y \
     && apt-get install -y nodejs
 
 # PHP拡張機能を入れる
-RUN docker-php-ext-install pdo_mysql gd
+# mysql だけでなく pgsql (PostgreSQL) も追加
+RUN apt-get update && apt-get install -y libpq-dev \
+    && docker-php-ext-install pdo_mysql pdo_pgsql gd
 
 # 作業ディレクトリ設定
 WORKDIR /var/www
@@ -35,4 +37,5 @@ RUN chown -R www-data:www-data /var/www/storage /var/www/bootstrap/cache
 EXPOSE 80
 
 # 🌟 サーバー起動コマンドをこれに書き換え
+# CMD をこれにすると、DB接続を確認してから起動するので安定します
 CMD php artisan migrate --force && php -S 0.0.0.0:80 -t public
