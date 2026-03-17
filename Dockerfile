@@ -39,4 +39,5 @@ EXPOSE 80
 # 🌟 サーバー起動コマンドをこれに書き換え
 # CMD をこれにすると、DB接続を確認してから起動するので安定します
 # Dockerfileの最後をこれに書き換え
-CMD php artisan config:clear && php artisan migrate --force && php artisan db:seed --force && php -S 0.0.0.0:80 -t public
+ # php artisan db:seed --force を削ります
+CMD php artisan config:clear && php artisan migrate --force && php -S 0.0.0.0:80 -t public
